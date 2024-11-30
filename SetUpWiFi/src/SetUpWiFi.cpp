@@ -35,8 +35,8 @@ void SetUpWiFi::startCaptivePortal() {
   Serial.println(IP);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send_P(200, "text/html", INDEX_HTML); });
   server.on("/getwifi", HTTP_POST, [this](AsyncWebServerRequest *request) {
-    if (!request->hasArg("ssid") || !request->hasArg("password")) {
-      request->send(400, "text/plain", "Thiếu SSID hoặc Password!");
+    if (!request->hasArg("ssid")) {
+      request->send(400, "text/plain", "Thiếu SSID!");
       return;
     }
     String ssid = request->arg("ssid");
