@@ -1,7 +1,7 @@
 #include "SetUpWiFi.h"
 #include <index.h>
 
-SetUpWiFi::SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid, const char *ap_password)
+SetUpWiFi::SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid, const char *ap_password, int buttonPin)
     : default_ssid(ssid), default_password(password), ap_ssid(ap_ssid), ap_password(ap_password), server(80), buttonPin(buttonPin) {}
 
 void SetUpWiFi::begin() {
