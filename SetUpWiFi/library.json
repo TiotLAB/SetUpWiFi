@@ -15,5 +15,11 @@
 	"platforms": [
 		"espressif32",
 		"espressif8266"
+	],
+	"dependencies": [
+		{
+			"name": "ESPAsyncWebServer",
+			"version": "^1.2.3"
+		}
 	]
 }
