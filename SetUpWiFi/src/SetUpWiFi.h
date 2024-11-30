@@ -28,6 +28,7 @@ private:
 public:
   SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid, const char *ap_password, int buttonPin);
   void begin();
+  void checkButton();
 };
 
 #endif // SET_UP_WIFI_H
