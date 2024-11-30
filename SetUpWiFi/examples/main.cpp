@@ -9,7 +9,9 @@ const char *wifi_password = "";
 const char *ap_ssid = "SetupWiFi";
 const char *ap_password = "";
 
-SetUpWiFi wifiManager(wifi_ssid, wifi_password, ap_ssid, ap_password);
+const int btnReset = 4;
+
+SetUpWiFi wifiManager(wifi_ssid, wifi_password, ap_ssid, ap_password, btnReset);
 
 void setup() {
   Serial.begin(9600);
@@ -18,4 +20,5 @@ void setup() {
 
 void loop() {
   // Code chính
+  wifiManager.checkButton();
 }
