@@ -2,16 +2,16 @@
 	"name": "SetUpWiFi",
 	"version": "1.0.0",
 	"description": "A library for both ESP32 and ESP8266",
-	"authors": [
-		{
-			"name": "TioTLAB",
-			"email": "dientuiotlab@gmail.com"
-		}
-	],
+	"authors": {
+		"name": "TioTLAB",
+		"email": "dientuiotlab@gmail.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/TiotLAB/SetUpWiFi.git"
+	},
 	"license": "MIT",
-	"frameworks": [
-		"arduino"
-	],
+	"frameworks": "arduino",
 	"platforms": [
 		"espressif32"
 	],
@@ -21,8 +21,8 @@
 			"version": "^1.2.3"
 		},
 		{
-      "name": "AsyncTCP",
-      "version": "^1.1.1"
-    }
+			"name": "AsyncTCP",
+			"version": "^1.1.1"
+		}
 	]
 }
