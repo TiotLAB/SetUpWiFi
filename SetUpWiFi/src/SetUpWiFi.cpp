@@ -2,9 +2,14 @@
 #include <index.h>
 
 SetUpWiFi::SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid, const char *ap_password)
-    : default_ssid(ssid), default_password(password), ap_ssid(ap_ssid), ap_password(ap_password), server(80) {}
+    : default_ssid(ssid), default_password(password), ap_ssid(ap_ssid), ap_password(ap_password), server(80), buttonPin(buttonPin) {}
 
 void SetUpWiFi::begin() {
+  pinMode(buttonPin, INPUT_PULLUP);
+  if (isButtonPressed()) {
+    clearWiFiConfig();
+    ESP.restart(); // Khởi động lại ESP
+  }
   String saved_ssid, saved_password;
   if (loadWiFiConfig(saved_ssid, saved_password)) {
     WiFi.begin(saved_ssid.c_str(), saved_password.c_str());
@@ -82,4 +87,27 @@ bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) { EEPROM.begin(51
   }
   Serial.println("No WiFi configuration found in EEPROM.");
   return false;
+}
+
+bool SetUpWiFi::isButtonPressed() {
+  unsigned long startPressTime = millis();
+  while (digitalRead(buttonPin) == LOW) {   // Chờ nút được nhấn (Low là nút được nhấn)
+    if (millis() - startPressTime > 2000) { // Kiểm tra nếu nút được giữ lâu hơn 2 giây
+      return true;
+    }
+  }
+  return false;
+}
+
+void SetUpWiFi::clearWiFiConfig() {
+  EEPROM.begin(512);
+  // Xóa cấu hình WiFi bằng cách ghi 0 vào EEPROM
+  for (int i = 0; i < 100; i++) {
+    EEPROM.write(i, 0);
+  }
+  for (int i = 100; i < 200; i++) {
+    EEPROM.write(i, 0);
+  }
+  EEPROM.commit();
+  Serial.println("WiFi configuration cleared from EEPROM.");
 }
