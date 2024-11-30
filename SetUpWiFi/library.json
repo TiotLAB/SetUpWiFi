@@ -19,6 +19,10 @@
 		{
 			"name": "ESPAsyncWebServer",
 			"version": "^1.2.3"
-		}
+		},
+		{
+      "name": "AsyncTCP",
+      "version": "^1.1.1"
+    }
 	]
 }
