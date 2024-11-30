@@ -7,8 +7,9 @@
 
 #include <AsyncTCP.h>
 #include <EEPROM.h>
-#include <WiFi.h>
 #include <ESPAsyncWebServer.h>
+#include <WiFi.h>
+
 
 class SetUpWiFi {
 private:
@@ -17,13 +18,16 @@ private:
   const char *ap_ssid;
   const char *ap_password;
   AsyncWebServer server;
+  int buttonPin;
   void startCaptivePortal();
   void saveWiFiConfig(const String &ssid, const String &password);
   bool loadWiFiConfig(String &ssid, String &password);
+  bool isButtonPressed();
+  void clearWiFiConfig();
 
 public:
-	SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid, const char *ap_password);
+  SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid, const char *ap_password, int buttonPin);
   void begin();
 };
 
-#endif // MY_LIBRARY_H
+#endif // SET_UP_WIFI_H
