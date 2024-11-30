@@ -6,10 +6,7 @@ SetUpWiFi::SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid
 
 void SetUpWiFi::begin() {
   pinMode(buttonPin, INPUT_PULLUP);
-  if (isButtonPressed()) {
-    clearWiFiConfig();
-    ESP.restart(); // Khởi động lại ESP
-  }
+  
   String saved_ssid, saved_password;
   if (loadWiFiConfig(saved_ssid, saved_password)) {
     WiFi.begin(saved_ssid.c_str(), saved_password.c_str());
@@ -97,6 +94,15 @@ bool SetUpWiFi::isButtonPressed() {
     }
   }
   return false;
+}
+
+void SetUpWiFi::checkButton() {
+  // Kiểm tra trạng thái nút nhấn trong vòng lặp chính
+  if (isButtonPressed()) {
+    Serial.println("Button pressed for 2 seconds. Clearing WiFi configuration...");
+    clearWiFiConfig();
+    ESP.restart(); // Khởi động lại ESP
+  }
 }
 
 void SetUpWiFi::clearWiFiConfig() {
