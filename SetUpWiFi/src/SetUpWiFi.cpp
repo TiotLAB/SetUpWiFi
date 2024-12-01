@@ -7,14 +7,25 @@ void SetUpWiFi::begin(const char *ssid, const char *password, int buttonPin, int
   this->buttonPin = buttonPin;
   pinMode(buttonPin, INPUT_PULLUP);
   String saved_ssid, saved_password;
+  String new_ssid, new_password;
   if (loadWiFiConfig(saved_ssid, saved_password)) {
     WiFi.begin(saved_ssid.c_str(), saved_password.c_str());
+    new_ssid = saved_ssid;
+    new_password = saved_password;
   } else {
     WiFi.begin(ssid, password);
+    new_ssid = ssid;
+    new_password = password;
   }
   unsigned long startAttemptTime = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeCheck) {
     delay(500);
+    Serial.print(".");
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nConnected to " + new_ssid);
+  } else {
+    Serial.println("\nWiFi Connected False");
   }
 }
 
@@ -24,19 +35,18 @@ void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password)
   String macAddress = WiFi.macAddress();
   macAddress.replace(":", "");
   macAddress.replace("-", "");
-  if (ap_ssid == nullptr || ap_password == nullptr)
-  {
+  if (ap_ssid == nullptr || ap_password == nullptr) {
     // Nếu không có giá trị được truyền vào, sử dụng SSID mặc định là "ESP32_" + địa chỉ MAC của ESP32
-    ssid_to_use = "ESP32_" + macAddress;        // Tạo SSID mặc định từ địa chỉ MAC của ESP32
-    password_to_use = "";               // Mật khẩu mặc định
-  }
-  else {
+    ssid_to_use = "ESP32_" + macAddress; // Tạo SSID mặc định từ địa chỉ MAC của ESP32
+    password_to_use = "";                // Mật khẩu mặc định
+  } else {
     // Nếu có giá trị truyền vào, sử dụng giá trị đó
     ssid_to_use = String(ap_ssid);
     password_to_use = String(ap_password);
   }
 
   WiFi.softAP(ssid_to_use.c_str(), password_to_use.c_str());
+  Serial.println(ssid_to_use);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send_P(200, "text/html", INDEX_HTML); });
   server.on("/getwifi", HTTP_POST, [this](AsyncWebServerRequest *request) {
     String ssid = request->arg("ssid");
