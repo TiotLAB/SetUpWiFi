@@ -19,8 +19,24 @@ void SetUpWiFi::begin(const char *ssid, const char *password, int buttonPin, int
 }
 
 void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password) {
-  WiFi.softAP(ap_ssid, ap_password);
-  IPAddress IP = WiFi.softAPIP();
+  String ssid_to_use;
+  String password_to_use;
+  String macAddress = WiFi.macAddress();
+  macAddress.replace(":", "");
+  macAddress.replace("-", "");
+  if (ap_ssid == nullptr || ap_password == nullptr)
+  {
+    // Nếu không có giá trị được truyền vào, sử dụng SSID mặc định là "ESP32_" + địa chỉ MAC của ESP32
+    ssid_to_use = "ESP32_" + macAddress;        // Tạo SSID mặc định từ địa chỉ MAC của ESP32
+    password_to_use = "";               // Mật khẩu mặc định
+  }
+  else {
+    // Nếu có giá trị truyền vào, sử dụng giá trị đó
+    ssid_to_use = String(ap_ssid);
+    password_to_use = String(ap_password);
+  }
+
+  WiFi.softAP(ssid_to_use.c_str(), password_to_use.c_str());
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send_P(200, "text/html", INDEX_HTML); });
   server.on("/getwifi", HTTP_POST, [this](AsyncWebServerRequest *request) {
     String ssid = request->arg("ssid");
@@ -111,14 +127,17 @@ void SetUpWiFi::autoHandleWiFi() {
     }
   } else {
     if (!apStarted) {
-      startCaptivePortal(ap_ssid, ap_password); // Dùng AP mặc định
+      startCaptivePortal(ap_ssid.c_str(), ap_password.c_str()); // Dùng AP mặc định
     }
     wifiConnected = false;
   }
 }
 
 void SetUpWiFi::handleWiFi(const char *ap_ssid, const char *ap_password) {
-  this->ap_ssid = ap_ssid;
-  this->ap_password = ap_password;
+  String macAddress = WiFi.macAddress();
+  macAddress.replace(":", "");
+  macAddress.replace("-", "");
+  this->ap_ssid = ap_ssid ? ap_ssid : "ESP32_" + macAddress; // Dùng giá trị mặc định nếu không có giá trị người dùng
+  this->ap_password = ap_password ? ap_password : "";
   autoHandleWiFi();
 }
