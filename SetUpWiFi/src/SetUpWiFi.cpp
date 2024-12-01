@@ -1,29 +1,26 @@
 #include "SetUpWiFi.h"
 #include <index.h>
 
-SetUpWiFi::SetUpWiFi(const char *ssid, const char *password, int buttonPin) : default_ssid(ssid), default_password(password), server(80), buttonPin(buttonPin) {}
+SetUpWiFi::SetUpWiFi() : server(80) {}
 
-void SetUpWiFi::begin() {
+void SetUpWiFi::begin(const char *ssid, const char *password, int buttonPin, int timeCheck) {
+  this->buttonPin = buttonPin;
   pinMode(buttonPin, INPUT_PULLUP);
-
   String saved_ssid, saved_password;
   if (loadWiFiConfig(saved_ssid, saved_password)) {
     WiFi.begin(saved_ssid.c_str(), saved_password.c_str());
   } else {
-    WiFi.begin(default_ssid, default_password);
+    WiFi.begin(ssid, password);
   }
   unsigned long startAttemptTime = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 10000) {
+  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeCheck) {
     delay(500);
-    Serial.print(".");
   }
 }
 
 void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password) {
   WiFi.softAP(ap_ssid, ap_password);
   IPAddress IP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(IP);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send_P(200, "text/html", INDEX_HTML); });
   server.on("/getwifi", HTTP_POST, [this](AsyncWebServerRequest *request) {
     String ssid = request->arg("ssid");
@@ -36,6 +33,7 @@ void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password)
     }
   });
   server.begin();
+  apStarted = true;
 }
 
 void SetUpWiFi::saveWiFiConfig(const String &ssid, const String &password) {
@@ -49,7 +47,6 @@ void SetUpWiFi::saveWiFiConfig(const String &ssid, const String &password) {
   }
   EEPROM.write(100 + password.length(), 0);
   EEPROM.commit();
-  Serial.println("WiFi configuration saved to EEPROM.");
 }
 
 bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) {
@@ -71,27 +68,24 @@ bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) {
   password = String(password_buffer);
 
   if (ssid.length() > 0 && password.length() > 0) {
-    Serial.println("WiFi configuration loaded from EEPROM.");
     return true;
   }
-  Serial.println("No WiFi configuration found in EEPROM.");
   return false;
 }
 
-bool SetUpWiFi::isButtonPressed() {
+bool SetUpWiFi::isButtonPressed(int timeCheckReset) {
   unsigned long startPressTime = millis();
-  while (digitalRead(buttonPin) == LOW) {   // Chờ nút được nhấn (Low là nút được nhấn)
-    if (millis() - startPressTime > 2000) { // Kiểm tra nếu nút được giữ lâu hơn 2 giây
+  while (digitalRead(buttonPin) == LOW) {             // Chờ nút được nhấn (Low là nút được nhấn)
+    if (millis() - startPressTime > timeCheckReset) { // Kiểm tra nếu nút được giữ lâu hơn 2 giây
       return true;
     }
   }
   return false;
 }
 
-void SetUpWiFi::checkButton() {
+void SetUpWiFi::checkButton(int timeCheckReset) {
   // Kiểm tra trạng thái nút nhấn trong vòng lặp chính
-  if (isButtonPressed()) {
-    Serial.println("Button pressed for 2 seconds. Clearing WiFi configuration...");
+  if (isButtonPressed(timeCheckReset)) {
     clearWiFiConfig();
     ESP.restart(); // Khởi động lại ESP
   }
@@ -107,5 +101,24 @@ void SetUpWiFi::clearWiFiConfig() {
     EEPROM.write(i, 0);
   }
   EEPROM.commit();
-  Serial.println("WiFi configuration cleared from EEPROM.");
+}
+
+void SetUpWiFi::autoHandleWiFi() {
+  if (WiFi.status() == WL_CONNECTED) {
+    if (!wifiConnected) {
+      wifiConnected = true;
+      apStarted = false; // Dừng trạng thái AP khi đã kết nối WiFi
+    }
+  } else {
+    if (!apStarted) {
+      startCaptivePortal(ap_ssid, ap_password); // Dùng AP mặc định
+    }
+    wifiConnected = false;
+  }
+}
+
+void SetUpWiFi::handleWiFi(const char *ap_ssid, const char *ap_password) {
+  this->ap_ssid = ap_ssid;
+  this->ap_password = ap_password;
+  autoHandleWiFi();
 }
