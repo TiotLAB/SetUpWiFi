@@ -1,24 +1,24 @@
 #include <Arduino.h>
 #include <SetUpWiFi.h>
 
-// WiFi mặc định để trống hoặc để bất kỳ
-const char *wifi_ssid = "";
-const char *wifi_password = "";
+const char *ssid = "";
+const char *password = "";
 
-// WiFi AP khi không kết nối được
-const char *ap_ssid = "SetupWiFi";
-const char *ap_password = "";
+const char *ap_ssid = "ESP_AP";
+const char *ap_pass = ""; // Mật khẩu nếu có (optional)
 
-const int btnReset = 4;
-
-SetUpWiFi wifiManager(wifi_ssid, wifi_password, ap_ssid, ap_password, btnReset);
+const int btn_reset = 4;
+const int time_check = 10000; // thời gian kiểm tra kết nối wifi
+const int time_reset = 10000; // thời gian reset wifi
+String id;
+SetUpWiFi wifisetup;
 
 void setup() {
   Serial.begin(9600);
-  wifiManager.begin();
+  wifisetup.begin(ssid, password, btn_reset, time_check);
 }
 
 void loop() {
-  // Code chính
-  wifiManager.checkButton();
+  wifisetup.checkButton(time_reset);      // Kiểm tra nút nhấn, giữ trong 1 khoảng thời gian để reset wifi
+  wifisetup.handleWiFi(ap_ssid, ap_pass); // kiểm tra wifi nếu có thì bỏ qua, ko thì phát Access Point
 }
