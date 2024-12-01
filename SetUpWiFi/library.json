@@ -1,6 +1,6 @@
 {
 	"name": "SetUpWiFi",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "A library used to setup, reset, change wifi for ESP32 using WebServer",
 	"keywords": "setupwifi, wifisetup",
 	"authors": {
