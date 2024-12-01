@@ -18,17 +18,23 @@ private:
   const char *ap_password;
   AsyncWebServer server;
   int buttonPin;
+  int timeCheckWiFi;
+  int timeCheckReset;
+  bool wifiConnected = false;
+  bool apStarted = false;
 
   void saveWiFiConfig(const String &ssid, const String &password);
   bool loadWiFiConfig(String &ssid, String &password);
-  bool isButtonPressed();
+  bool isButtonPressed(int timeCheckReset);
   void clearWiFiConfig();
+  void autoHandleWiFi();
 
 public:
-  SetUpWiFi(const char *ssid, const char *password, int buttonPin);
-  void begin();
-  void checkButton();
+  SetUpWiFi();
+  void begin(const char *ssid, const char *password, int buttonPin, int timeCheck);
+  void checkButton(int timeCheckReset);
   void startCaptivePortal(const char *ap_ssid, const char *ap_password);
+  void handleWiFi(const char *ap_ssid, const char *ap_password);
 };
 
 #endif // SET_UP_WIFI_H
