@@ -1,12 +1,11 @@
 #include "SetUpWiFi.h"
 #include <index.h>
 
-SetUpWiFi::SetUpWiFi(const char *ssid, const char *password, const char *ap_ssid, const char *ap_password, int buttonPin)
-    : default_ssid(ssid), default_password(password), ap_ssid(ap_ssid), ap_password(ap_password), server(80), buttonPin(buttonPin) {}
+SetUpWiFi::SetUpWiFi(const char *ssid, const char *password, int buttonPin) : default_ssid(ssid), default_password(password), server(80), buttonPin(buttonPin) {}
 
 void SetUpWiFi::begin() {
   pinMode(buttonPin, INPUT_PULLUP);
-  
+
   String saved_ssid, saved_password;
   if (loadWiFiConfig(saved_ssid, saved_password)) {
     WiFi.begin(saved_ssid.c_str(), saved_password.c_str());
@@ -18,27 +17,15 @@ void SetUpWiFi::begin() {
     delay(500);
     Serial.print(".");
   }
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi connected!");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("\nFailed to connect, starting captive portal...");
-    startCaptivePortal();
-  }
 }
 
-void SetUpWiFi::startCaptivePortal() {
+void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password) {
   WiFi.softAP(ap_ssid, ap_password);
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(IP);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send_P(200, "text/html", INDEX_HTML); });
   server.on("/getwifi", HTTP_POST, [this](AsyncWebServerRequest *request) {
-    if (!request->hasArg("ssid")) {
-      request->send(400, "text/plain", "Thiếu SSID!");
-      return;
-    }
     String ssid = request->arg("ssid");
     String password = request->arg("password");
     this->saveWiFiConfig(ssid, password);
@@ -65,7 +52,8 @@ void SetUpWiFi::saveWiFiConfig(const String &ssid, const String &password) {
   Serial.println("WiFi configuration saved to EEPROM.");
 }
 
-bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) { EEPROM.begin(512);
+bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) {
+  EEPROM.begin(512);
   char ssid_buffer[100];
   for (int i = 0; i < 100; i++) {
     ssid_buffer[i] = EEPROM.read(i);
