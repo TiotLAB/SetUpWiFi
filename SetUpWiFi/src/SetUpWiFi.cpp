@@ -3,9 +3,9 @@
 
 SetUpWiFi::SetUpWiFi() : server(80) {}
 
-void SetUpWiFi::begin(const char *ssid, const char *password, int buttonPin, int timeCheck) {
-  this->buttonPin = buttonPin;
-  pinMode(buttonPin, INPUT_PULLUP);
+void SetUpWiFi::begin(const char *ssid, const char *password, int resetPin, int timeCheck) {
+  this->resetPin = resetPin;
+  pinMode(resetPin, INPUT_PULLUP);
   String saved_ssid, saved_password;
   String new_ssid, new_password;
   if (loadWiFiConfig(saved_ssid, saved_password)) {
@@ -18,7 +18,7 @@ void SetUpWiFi::begin(const char *ssid, const char *password, int buttonPin, int
     new_password = password;
   }
   unsigned long startAttemptTime = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeCheck) {
+  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime <= (unsigned long)timeCheck) {
     delay(500);
     Serial.print(".");
   }
@@ -36,9 +36,10 @@ void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password)
   macAddress.replace(":", "");
   macAddress.replace("-", "");
   if (ap_ssid == nullptr || ap_password == nullptr) {
-    // Nếu không có giá trị được truyền vào, sử dụng SSID mặc định là "ESP32_" + địa chỉ MAC của ESP32
-    ssid_to_use = "ESP32_" + macAddress; // Tạo SSID mặc định từ địa chỉ MAC của ESP32
-    password_to_use = "";                // Mật khẩu mặc định
+    // Nếu không có giá trị được truyền vào, sử dụng SSID mặc định là "ESP_" +
+    // địa chỉ MAC của ESP
+    ssid_to_use = "ESP_" + macAddress; // Tạo SSID mặc định từ địa chỉ MAC của ESP
+    password_to_use = "";              // Mật khẩu mặc định
   } else {
     // Nếu có giá trị truyền vào, sử dụng giá trị đó
     ssid_to_use = String(ap_ssid);
@@ -53,7 +54,7 @@ void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password)
     String password = request->arg("password");
     this->saveWiFiConfig(ssid, password);
     if (ssid != "") {
-      request->send(200, "text/plain", "Cấu hình WiFi thành công. ESP32 đang kết nối...");
+      request->send(200, "text/plain", "Cấu hình WiFi thành công. ESP đang kết nối...");
       delay(2000);
       ESP.restart();
     }
@@ -64,21 +65,23 @@ void SetUpWiFi::startCaptivePortal(const char *ap_ssid, const char *ap_password)
 
 void SetUpWiFi::saveWiFiConfig(const String &ssid, const String &password) {
   EEPROM.begin(512);
-  for (int i = 0; i < ssid.length(); i++) {
+  for (size_t i = 0; i < ssid.length(); i++) {
     EEPROM.write(i, ssid[i]);
   }
   EEPROM.write(ssid.length(), 0);
-  for (int i = 0; i < password.length(); i++) {
+  for (size_t i = 0; i < password.length(); i++) {
     EEPROM.write(100 + i, password[i]);
   }
   EEPROM.write(100 + password.length(), 0);
   EEPROM.commit();
+  Serial.println("Wifi Saved");
 }
 
 bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) {
+  Serial.println("Wifi loading");
   EEPROM.begin(512);
   char ssid_buffer[100];
-  for (int i = 0; i < 100; i++) {
+  for (size_t i = 0; i < 100; i++) {
     ssid_buffer[i] = EEPROM.read(i);
     if (ssid_buffer[i] == 0)
       break; // Ký tự kết thúc chuỗi
@@ -86,7 +89,7 @@ bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) {
   ssid = String(ssid_buffer);
 
   char password_buffer[100];
-  for (int i = 0; i < 100; i++) {
+  for (size_t i = 0; i < 100; i++) {
     password_buffer[i] = EEPROM.read(100 + i);
     if (password_buffer[i] == 0)
       break; // Ký tự kết thúc chuỗi
@@ -101,8 +104,8 @@ bool SetUpWiFi::loadWiFiConfig(String &ssid, String &password) {
 
 bool SetUpWiFi::isButtonPressed(int timeCheckReset) {
   unsigned long startPressTime = millis();
-  while (digitalRead(buttonPin) == LOW) {             // Chờ nút được nhấn (Low là nút được nhấn)
-    if (millis() - startPressTime > timeCheckReset) { // Kiểm tra nếu nút được giữ lâu hơn 2 giây
+  while (digitalRead(resetPin) == LOW) {                             // Chờ nút được nhấn (Low là nút được nhấn)
+    if (millis() - startPressTime > (unsigned long)timeCheckReset) { // Kiểm tra nếu nút được giữ lâu hơn 2 giây
       return true;
     }
   }
@@ -127,6 +130,7 @@ void SetUpWiFi::clearWiFiConfig() {
     EEPROM.write(i, 0);
   }
   EEPROM.commit();
+  Serial.println("Reset Wifi");
 }
 
 void SetUpWiFi::autoHandleWiFi() {
@@ -147,7 +151,7 @@ void SetUpWiFi::handleWiFi(const char *ap_ssid, const char *ap_password) {
   String macAddress = WiFi.macAddress();
   macAddress.replace(":", "");
   macAddress.replace("-", "");
-  this->ap_ssid = ap_ssid ? ap_ssid : "ESP32_" + macAddress; // Dùng giá trị mặc định nếu không có giá trị người dùng
+  this->ap_ssid = ap_ssid ? ap_ssid : "ESP_" + macAddress;
   this->ap_password = ap_password ? ap_password : "";
   autoHandleWiFi();
 }
